@@ -2,7 +2,7 @@
 
 function initialiseService($http) {
 
-  var mapRelPath = '../../../../../';
+  var mapRelPath = 'data/';
 
 	function loadSession(games, user) {
 		var gameData = store.get(user);

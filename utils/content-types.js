@@ -4,5 +4,7 @@ module.exports = {
   'tag'  : 'text/html',
   'ico'  : 'image/x-icon',
   'png'  : 'image/png',
-  'svg'  : 'image/svg+xml'
+  'svg'  : 'image/svg+xml',
+  'js'   : 'text/javascript',
+  'txt'   : 'text/plain'
 }

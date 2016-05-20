@@ -3,16 +3,16 @@
 /* global angular */
 /* global google */
 
-angular.module('myApp.view2', ['ngRoute'])
+angular.module('myApp.gameView', ['ngRoute'])
 
 .config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/view2', {
-    templateUrl: 'view2/view2.html',
-    controller: 'View2Ctrl'
+  $routeProvider.when('/game-view', {
+    templateUrl: 'game-view/game-view.html',
+    controller: 'GameViewCtrl'
   });
 }])
 
-.controller('View2Ctrl', ['$scope', 'myApp.grid.factory', function($scope, gridFactory) {
+.controller('GameViewCtrl', ['$scope', 'myApp.grid.factory', function($scope, gridFactory) {
 
   $scope.status = { text: "Welcome - choose a level", gamesCompleted: 0 };
   

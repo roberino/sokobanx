@@ -24,13 +24,13 @@ let server = http.createServer(function (req, res) {
     res.setHeader('Cache-Control', 'no-cache, no-store');
     res.end(JSON.stringify(sysInfo[url.slice(6)]()));
   } else {
-    fs.readFile('./static' + url, function (err, data) {
+    fs.readFile('./app' + url, function (err, data) {
       if (err) {
         res.writeHead(404);
         res.end();
       } else {
         let ext = path.extname(url).slice(1);
-        res.setHeader('Content-Type', contentTypes[ext]);
+        res.setHeader('Content-Type', contentTypes[ext] || 'text/html');
         if (ext === 'html') {
           res.setHeader('Cache-Control', 'no-cache, no-store');
         }
