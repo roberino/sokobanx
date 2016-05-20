@@ -1,11 +1,12 @@
 /* global angular */
+/* global store */
 
 function initialiseService($http) {
 
   var mapRelPath = 'data/';
 
-	function loadSession(games, user) {
-		var gameData = store.get(user);
+  function loadSession(games, name) {
+		var gameData = store.get(name);
 				
 		if(gameData){
 			games.forEach(function(game) {
@@ -17,6 +18,8 @@ function initialiseService($http) {
 				}
 			});
 		}
+		
+		return false;
 	}
 
   function loadGamesMap($http, mapName, callback) {
@@ -28,12 +31,45 @@ function initialiseService($http) {
         "Content-Type": "text/plain"
       }
     }).success(function(response) {
-      callback(parseMapData(mapName, response));
+      callback(restoreGames(parseMapData(mapName, response)));
     }).error(function(error) {
       callback(error);
     });
   }
+  
+  function saveGames(games) {
+    var gamesData = {};
+    games.forEach(function(g) {
+      if (g.grid) {
+        gamesData[g.key]=g;
+      }
+    });
 
+    store.set(games.name, gamesData);
+  }
+
+  function restoreGames(games) {
+    var gamesData = store.get(games.name);
+    if (gamesData) {
+      games.forEach(function(g) {
+        var currentGameData = gamesData[g.key];
+        if (currentGameData) {
+          g = createGridFromGameMap(g);
+          g.complete = currentGameData.complete;
+          g.moveCount = currentGameData.moveCount;
+          g.grid.forEach(function(r,ri) {
+            var currentGameDataRow = currentGameData.grid[ri];
+            r.cells.forEach(function(c,ci) {
+              var currentGameDataCell = currentGameDataRow.cells[ci];
+              c.cellType = currentGameDataCell.cellType;
+              c.complete = currentGameDataCell.complete;
+            });
+          });
+        }
+      });
+    };
+    return games;
+  }
   function parseMapData(name, textData) {
     var gameLines = textData.split('\n');
     var games = [];
@@ -42,6 +78,12 @@ function initialiseService($http) {
       name: "Level " + i++,
       rows: []
     };
+    
+    games.name = name;
+    
+    games.save = function() {
+      saveGames(this);
+    };
 
     gameLines.forEach(function(lineText) {
       if (lineText.length == 0) {
@@ -49,7 +91,8 @@ function initialiseService($http) {
           if(!reload && this.grid) return this;
           return createGridFromGameMap(this);
         };
-		currentGame.key = i;
+        
+        currentGame.key = "g" + (i - 1);
         
         games.push(currentGame);
         currentGame = {
@@ -96,6 +139,12 @@ function initialiseService($http) {
 
     gameMap.grid = [];
     
+    gameMap.complete = false;
+    gameMap.moveCount = 0;
+    var grid = gameMap.grid;
+    
+    grid.storage = [];
+    
     gameMap.moveMan = function(ev) {
       var man = this.grid.findMan();
       var adj = man.adjacent();
@@ -116,14 +165,8 @@ function initialiseService($http) {
           break;
       }
       
-      onCellClicked(this.grid, targ);
+      onCellClicked(gameMap, this.grid, targ);
     };
-    
-    var grid = gameMap.grid;
-    
-    grid.parent = gameMap;
-    grid.storage = [];
-    grid.moveCount = 0;
     
     grid.findMan = function() {
       var man;
@@ -198,7 +241,6 @@ function initialiseService($http) {
         var cellObj = {
           y: r,
           x: c,
-          parent: row,
           width: cellWidth,
           height: cellWidth,
           cellType: ct,
@@ -208,7 +250,7 @@ function initialiseService($http) {
               cur.selected = false;
             });
             this.selected = true;
-            onCellClicked(grid, this);
+            onCellClicked(gameMap, grid, this);
           },
           offsetCell: function(x0, y0) {
             var y1 = (this.y + y0);
@@ -288,7 +330,7 @@ function initialiseService($http) {
     return gameMap;
   }
   
-  function moveTo(grid, cell) {
+  function moveTo(game, grid, cell) {
     var man = grid.findMan();
     
     if(!man) return;
@@ -300,7 +342,7 @@ function initialiseService($http) {
     if(diff.x !== 0) {
       diff.xd = diff.x > 0 ? 1 : -1;
       while(man.x !== cell.x) {
-        if(!onCellClicked(grid, man.offsetCell(diff.xd, 0))) {
+        if(!onCellClicked(game, grid, man.offsetCell(diff.xd, 0))) {
           break;
         }
         man = grid.findMan();
@@ -310,7 +352,7 @@ function initialiseService($http) {
     if(diff.y !== 0) {
       diff.yd = diff.y > 0 ? 1 : -1;
       while(man.y !== cell.y) {
-        if(!onCellClicked(grid, man.offsetCell(0, diff.yd))) {
+        if(!onCellClicked(game, grid, man.offsetCell(0, diff.yd))) {
           break;
         }
         man = grid.findMan();
@@ -318,7 +360,7 @@ function initialiseService($http) {
     }
   }
 
-  function onCellClicked(grid, cell) {
+  function onCellClicked(game, grid, cell) {
 
     // find the player in an adjacent cell
     // check what's in this cell:
@@ -334,10 +376,10 @@ function initialiseService($http) {
       return c.cellType == "man";
     });
 
-    if (!player) return moveTo(grid, cell);
+    if (!player) return moveTo(game, grid, cell);
 
     if (cell.cellType == "") {
-      grid.moveCount++;
+      game.moveCount++;
       cell.swapType(player);
       return true;
     }
@@ -345,10 +387,10 @@ function initialiseService($http) {
       
       if(!cell.pushCell(player)) return false;
       
-      grid.moveCount++;
+      game.moveCount++;
 
-      if (!grid.parent.complete && grid.isComplete()) {
-        grid.parent.complete = true;
+      if (!game.complete && grid.isComplete()) {
+        game.complete = true;
         if (grid.onComplete) {
           grid.onComplete(player);
         }
@@ -357,7 +399,7 @@ function initialiseService($http) {
       return true;
     }
     if (cell.cellType == "storage") {
-      grid.moveCount++;
+      game.moveCount++;
       cell.overlay(player);
       return true;
     }

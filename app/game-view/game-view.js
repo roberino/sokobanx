@@ -18,11 +18,17 @@ angular.module('myApp.gameView', ['ngRoute'])
   
   gridFactory.loadGames("sokoban-levels-plus", function(games) {
     $scope.games = games;
+    $scope.status.gamesCompleted = 0;
+    
+    $scope.games.forEach(function(g) {
+      if(g.complete) $scope.status.gamesCompleted++;
+    });
     
     $scope.loadGame = function(game, reload){
       $scope.currentGame = game.load(reload);
       $scope.currentGame.grid.onComplete = notifyComplete;
       $scope.status.text = ($scope.currentGame.complete ? "" : "Prepare to lose");
+      
     };
   });
   
