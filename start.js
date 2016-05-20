@@ -1,3 +1,5 @@
+"use strict";
+
 const cluster = require('cluster'),
       stopSignals = [
         'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT',
@@ -6,6 +8,8 @@ const cluster = require('cluster'),
       production = process.env.NODE_ENV == 'production';
 
 let stopping = false;
+
+let clusterOn = process.env.NODE_ENV || false;
 
 cluster.on('disconnect', function(worker) {
   if (production) {
@@ -17,8 +21,8 @@ cluster.on('disconnect', function(worker) {
   }
 });
 
-if (cluster.isMaster) {
-  const workerCount = process.env.NODE_CLUSTER_WORKERS || 4;
+if (cluster.isMaster && clusterOn) {
+  const workerCount = process.env.NODE_CLUSTER_WORKERS || 1;
   console.log(`Starting ${workerCount} workers...`);
   for (let i = 0; i < workerCount; i++) {
     cluster.fork();

@@ -1,3 +1,5 @@
+"use strict";
+
 const http         = require('http'),
       fs           = require('fs'),
       path         = require('path'),
@@ -38,6 +40,6 @@ let server = http.createServer(function (req, res) {
   }
 });
 
-server.listen(env.NODE_PORT || 3000, env.NODE_IP || 'localhost', function () {
+server.listen(process.env.PORT || env.NODE_PORT || 3000, process.env.IP || env.NODE_IP || 'localhost', function () {
   console.log(`Application worker ${process.pid} started...`);
 });
