@@ -6,5 +6,6 @@ module.exports = {
   'png'  : 'image/png',
   'svg'  : 'image/svg+xml',
   'js'   : 'text/javascript',
-  'txt'   : 'text/plain'
+  'txt'   : 'text/plain',
+  'zip'   : 'application/zip'
 }
